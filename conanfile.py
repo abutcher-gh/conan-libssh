@@ -29,7 +29,7 @@ class LibsshConan(ConanFile):
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()''')
 
-        #fixme cmake doesnt see function...
+        #fixme cmake doesnt see this function ...
         tools.replace_in_file("%s/ConfigureChecks.cmake" % self._source_subfolder,
             "check_function_exists(EVP_aes_128_ctr HAVE_OPENSSL_EVP_AES_CTR)",
             "set(HAVE_OPENSSL_EVP_AES_CTR 1)")
@@ -53,7 +53,7 @@ conan_basic_setup()''')
 
     def package(self):
         self.copy("*.h", dst="include", src="%s/include" % self._source_subfolder)
-        self.copy("*libssh.lib", dst="lib", keep_path=False)
+        self.copy("*ssh.lib", dst="lib", keep_path=False)
         self.copy("*.dll", dst="bin", keep_path=False)
         self.copy("*.so", dst="lib", keep_path=False)
         self.copy("*.dylib", dst="lib", keep_path=False)
