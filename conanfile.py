@@ -3,7 +3,7 @@ import os
 
 class LibsshConan(ConanFile):
     name = "libssh"
-    version = "0.8.6"
+
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
     url = "<Package recipe repository url here, for issues about the package>"
@@ -13,17 +13,17 @@ class LibsshConan(ConanFile):
     options = {"shared": [True, False]}
     default_options = "shared=True"
     generators = "cmake"
-    requires = "zlib/1.2.11@conan/stable", "OpenSSL/1.1.1a@conan/stable"
+    requires = "zlib/1.2.11@"
+    exports_sources = ["patches/**"]
     _source_subfolder = "sources_subfolder"
     _build_subfolder = "build_subfolder"
 
     def source(self):
-        extracted_dir = "libssh-%s" % self.version
-        archive_name = "%s.tar.xz" % extracted_dir
-        source_url = "https://www.libssh.org/files/0.8/%s" % archive_name
-        tools.get(source_url, sha1='2CB2775DCF2780520421A669EEBFE5862BA51D29'.lower() )
-        os.rename(extracted_dir, self._source_subfolder)
-
+        tools.get(**self.conan_data["sources"][self.version])
+        os.rename("libssh-" + self.version, self._source_subfolder)
+        for patch in self.conan_data.get("patches", {}).get(self.version, []):
+            tools.patch(**patch)
+            
         tools.replace_in_file("%s/CMakeLists.txt" % self._source_subfolder, "set(APPLICATION_NAME ${PROJECT_NAME})",
                               '''set(APPLICATION_NAME ${PROJECT_NAME})
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
@@ -38,7 +38,16 @@ conan_basic_setup()''')
         tools.replace_in_file("%s/src/CMakeLists.txt" % self._source_subfolder,
                               "${OPENSSL_CRYPTO_LIBRARY}",
                               "${CONAN_LIBS}")
-
+    
+    
+    def requirements(self):
+        if tools.Version(self.version) < "0.8":
+            self.requires("openssl/[>=1.0.2a <=1.0.2t]")
+        elif tools.Version(self.version) < "0.9":
+            self.requires("openssl/[>=1.1.0a <=1.1.0l]")
+        else:
+            self.requires("openssl/[>=1.1.1a <=1.1.1n]")
+            
 
     def configure(self):
         #c library
@@ -52,6 +61,10 @@ conan_basic_setup()''')
 
 
     def package(self):
+        cmake = CMake(self)
+        cmake.definitions["CMAKE_VERBOSE_MAKEFILE"] = True
+        cmake.configure(source_folder=self._source_subfolder)
+        cmake.install()
         self.copy("*.h", dst="include", src="%s/include" % self._source_subfolder)
         self.copy("*ssh.lib", dst="lib", keep_path=False)
         self.copy("*.dll", dst="bin", keep_path=False)
