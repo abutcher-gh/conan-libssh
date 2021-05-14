@@ -12,7 +12,7 @@ class LibsshConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False]}
     default_options = "shared=True"
-    generators = "cmake"
+    generators = ["cmake_paths", "cmake"]
     requires = "zlib/1.2.11@"
     exports_sources = ["patches/**"]
     _source_subfolder = "sources_subfolder"
@@ -23,10 +23,12 @@ class LibsshConan(ConanFile):
         os.rename("libssh-" + self.version, self._source_subfolder)
         for patch in self.conan_data.get("patches", {}).get(self.version, []):
             tools.patch(**patch)
-            
+
         tools.replace_in_file("%s/CMakeLists.txt" % self._source_subfolder, "set(APPLICATION_NAME ${PROJECT_NAME})",
                               '''set(APPLICATION_NAME ${PROJECT_NAME})
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+set(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ${CMAKE_MODULE_PATH})
 conan_basic_setup()''')
 
         #fixme cmake doesnt see this function ...
@@ -38,8 +40,8 @@ conan_basic_setup()''')
         tools.replace_in_file("%s/src/CMakeLists.txt" % self._source_subfolder,
                               "${OPENSSL_CRYPTO_LIBRARY}",
                               "${CONAN_LIBS}")
-    
-    
+
+
     def requirements(self):
         if tools.Version(self.version) < "0.8":
             self.requires("openssl/[>=1.0.2a <=1.0.2t]")
@@ -47,15 +49,18 @@ conan_basic_setup()''')
             self.requires("openssl/[>=1.1.0a <=1.1.0l]")
         else:
             self.requires("openssl/[>=1.1.1a <=1.1.1n]")
-            
 
     def configure(self):
         #c library
         del self.settings.compiler.libcxx
 
+
     def build(self):
         cmake = CMake(self)
         cmake.definitions["CMAKE_VERBOSE_MAKEFILE"] = True
+        cmake.definitions["CMAKE_FIND_ROOT_PATH_MODE_LIBRARY"] = "ONLY"
+        cmake.definitions["CMAKE_FIND_ROOT_PATH_MODE_INCLUDE"] = "ONLY"
+        cmake.definitions["CMAKE_FIND_ROOT_PATH_MODE_PACKAGE"] = "ONLY"
         cmake.configure(source_folder=self._source_subfolder)
         cmake.build()
 
