@@ -29,6 +29,7 @@ class LibsshConan(ConanFile):
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ${CMAKE_MODULE_PATH})
+set(OPENSSL_USE_STATIC_LIBS ''' + ('TRUE' if not self.options["openssl"].shared else 'FALSE') + ''')
 conan_basic_setup()''')
 
         #fixme cmake doesnt see this function ...
@@ -49,6 +50,10 @@ conan_basic_setup()''')
             self.requires("openssl/[>=1.1.0a <=1.1.0l]")
         else:
             self.requires("openssl/[>=1.1.1a <=1.1.1n]")
+
+    def package_id(self):
+        if not self.options["openssl"].shared:
+            self.info.options = self.info.full_options
 
     def configure(self):
         #c library
