@@ -60,6 +60,13 @@ conan_basic_setup()''')
         del self.settings.compiler.libcxx
 
 
+    def fixTransitiveCrossLink(self):
+        if tools.cross_building(self.settings):
+            for root, dirs, files in os.walk("."):
+                for name in files:
+                    if name == "link.txt":
+                        tools.replace_in_file(os.path.join(root, name), "-rpath,", "-rpath-link,")
+
     def build(self):
         cmake = CMake(self)
         cmake.definitions["CMAKE_VERBOSE_MAKEFILE"] = True
@@ -67,6 +74,7 @@ conan_basic_setup()''')
         cmake.definitions["CMAKE_FIND_ROOT_PATH_MODE_INCLUDE"] = "ONLY"
         cmake.definitions["CMAKE_FIND_ROOT_PATH_MODE_PACKAGE"] = "ONLY"
         cmake.configure(source_folder=self._source_subfolder)
+        self.fixTransitiveCrossLink()
         cmake.build()
 
 
@@ -74,6 +82,7 @@ conan_basic_setup()''')
         cmake = CMake(self)
         cmake.definitions["CMAKE_VERBOSE_MAKEFILE"] = True
         cmake.configure(source_folder=self._source_subfolder)
+        self.fixTransitiveCrossLink()
         cmake.install()
         self.copy("*.h", dst="include", src="%s/include" % self._source_subfolder)
         self.copy("*ssh.lib", dst="lib", keep_path=False)
