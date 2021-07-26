@@ -26,6 +26,7 @@ class LibsshConan(ConanFile):
 
         tools.replace_in_file("%s/CMakeLists.txt" % self._source_subfolder, "set(APPLICATION_NAME ${PROJECT_NAME})",
                               '''set(APPLICATION_NAME ${PROJECT_NAME})
+set(CONAN_DISABLE_CHECK_COMPILER 1)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH} ${CMAKE_MODULE_PATH})
